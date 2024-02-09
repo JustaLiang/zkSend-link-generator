@@ -90,9 +90,12 @@ async function main() {
       // console.log(obj.data);
       if (!obj.data) return;
       link.addClaimableObject(obj.data?.objectId);
-      link.addClaimableMist(BigInt(GAS_TIPS)); // <- this is so fucking annoying, why can't I add a SUI coin with addClaimableObject
+      // this is so fucking annoying
+      link.addClaimableMist(BigInt(GAS_TIPS));
+      // why can't I add a SUI coin with addClaimableObject
+      // link.addClaimableObject(gasCoin[2*idx+1].objectId);
       const tx = await link.createSendTransaction();
-      tx.setGasPayment([gasCoins[idx]]);
+      tx.setGasPayment([gasCoins[2*idx]]);
       tx.setSender(signerAddr);
       tx.setGasOwner(signerAddr);
       const txRes = await client.signAndExecuteTransactionBlock({
