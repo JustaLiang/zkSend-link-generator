@@ -1,0 +1,14 @@
+{
+  "name": "zkSend-link-generator",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/JustaLiang/zkSend-link-generator.git",
+  "author": "justaliang <justaliang@protonmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@mysten/zksend": "^0.2.2",
+    "@types/node": "^20.11.17",
+    "dotenv": "^16.4.1",
+    "fast-csv": "^5.0.0"
+  }
+}
