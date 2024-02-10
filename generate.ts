@@ -9,8 +9,6 @@ import {
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { ZkSendLinkBuilder } from "@mysten/zksend";
-import { write } from "fast-csv";
-import fs from "fs";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -52,7 +50,9 @@ async function main() {
 
   // generate gas coins for sending tx and gas tips for others
   const tx = new TransactionBlock();
-  const amounts = new Array(objectCount * 2).fill(tx.pure(GAS_BUDGET, "u64"));
+  const amounts = new Array(objectCount).fill(
+    tx.pure(GAS_BUDGET + GAS_TIPS, "u64")
+  );
   console.log(amounts.length);
   const coins = tx.splitCoins(tx.gas, amounts);
   tx.transferObjects(
@@ -95,7 +95,7 @@ async function main() {
       // why can't I add a SUI coin with addClaimableObject
       // link.addClaimableObject(gasCoin[2*idx+1].objectId);
       const tx = await link.createSendTransaction();
-      tx.setGasPayment([gasCoins[2*idx]]);
+      tx.setGasPayment([gasCoins[idx]]);
       tx.setSender(signerAddr);
       tx.setGasOwner(signerAddr);
       const txRes = await client.signAndExecuteTransactionBlock({
