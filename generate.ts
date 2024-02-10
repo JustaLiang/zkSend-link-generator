@@ -23,7 +23,7 @@ async function main() {
   const signer = Ed25519Keypair.fromSecretKey(Buffer.from(SECRET_KEY, "hex"));
   const client = new SuiClient({ url: getFullnodeUrl("mainnet") });
   const signerAddr = signer.getPublicKey().toSuiAddress();
-  console.log("signer:", signerAddr);
+  // console.log("signer:", signerAddr);
 
   // get target objects
   let hasNextPage = true;
@@ -46,14 +46,14 @@ async function main() {
   }
   const objectInfos = objectsVec.flat();
   const objectCount = objectInfos.length;
-  console.log("object count:", objectCount);
+  // console.log("object count:", objectCount);
 
   // generate gas coins for sending tx and gas tips for others
   const tx = new TransactionBlock();
   const amounts = new Array(objectCount).fill(
     tx.pure(GAS_BUDGET + GAS_TIPS, "u64")
   );
-  console.log(amounts.length);
+  // console.log(amounts.length);
   const coins = tx.splitCoins(tx.gas, amounts);
   tx.transferObjects(
     amounts.map((_, idx) => coins[idx]),
@@ -78,40 +78,38 @@ async function main() {
         digest: createdObject.digest,
       };
     });
-  console.log("sui coin count:", gasCoins.length);
+  // console.log("sui coin count:", gasCoins.length);
 
   // generate links
-  await Promise.all(
-    objectInfos.map(async (obj, idx) => {
-      const link = new ZkSendLinkBuilder({
-        sender: signerAddr,
-        client,
-      });
-      // console.log(obj.data);
-      if (!obj.data) return;
-      link.addClaimableObject(obj.data?.objectId);
-      // this is so fucking annoying
-      link.addClaimableMist(BigInt(GAS_TIPS));
-      // why can't I add a SUI coin with addClaimableObject
-      // link.addClaimableObject(gasCoin[2*idx+1].objectId);
-      const tx = await link.createSendTransaction();
-      tx.setGasPayment([gasCoins[idx]]);
-      tx.setSender(signerAddr);
-      tx.setGasOwner(signerAddr);
-      const txRes = await client.signAndExecuteTransactionBlock({
-        transactionBlock: tx,
-        signer,
-        options: {
-          showEffects: true,
-        },
-      });
-      if (txRes.effects?.status.status === "success") {
-        const zklink = link.getLink();
-        console.log(zklink);
-        return zklink;
-      };
-    }),
-  );
+  const objectInfoVec = objectInfos.map((obj, idx) => { return {obj, idx}});
+  for (const { obj, idx } of objectInfoVec) {
+    const link = new ZkSendLinkBuilder({
+      sender: signerAddr,
+      client,
+    });
+    // console.log(obj.data);
+    if (!obj.data) return;
+    link.addClaimableObject(obj.data?.objectId);
+    // this is so fucking annoying
+    link.addClaimableMist(BigInt(GAS_TIPS));
+    // why can't I add a SUI coin with addClaimableObject
+    // link.addClaimableObject(gasCoin[2*idx+1].objectId);
+    const tx = await link.createSendTransaction();
+    tx.setGasPayment([gasCoins[idx]]);
+    tx.setSender(signerAddr);
+    tx.setGasOwner(signerAddr);
+    const txRes = await client.signAndExecuteTransactionBlock({
+      transactionBlock: tx,
+      signer,
+      options: {
+        showEffects: true,
+      },
+    });
+    if (txRes.effects?.status.status === "success") {
+      const zklink = link.getLink();
+      console.log(zklink);
+    };
+  }
 }
 
 main().catch((err) => console.log(err));
